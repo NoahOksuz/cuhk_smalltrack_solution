@@ -1,0 +1,264 @@
+{
+  "compression": "lzma-delta-v2",
+  "models": [
+    {
+      "tag": "gen_joint_interact_all_s3407",
+      "cache": "union32",
+      "view": "ir",
+      "weight": 0.69,
+      "need": "ir",
+      "bits": 6,
+      "kind": "joint",
+      "run": {
+        "fold": null,
+        "all": true,
+        "tag": "gen_joint_interact_all_s3407",
+        "body_cache": "ir128",
+        "hand_cache": "irhand128",
+        "view": null,
+        "frames": 32,
+        "strided": false,
+        "fusion": "interact",
+        "interaction_lr": 0.0003,
+        "aux": 0.25,
+        "epochs": 40,
+        "batch": 8,
+        "accum": 2,
+        "workers": 5,
+        "seed": 3407,
+        "lr": 1e-05,
+        "headlr": 0.001,
+        "warmup": 2,
+        "smoke": false,
+        "variant": "joint_body_hands_ir128_t32",
+        "head": "joint",
+        "cache": "ir128+irhand128"
+      },
+      "hand_cache": "irhand128",
+      "strideless": true,
+      "frames": 32,
+      "fusion": "interact",
+      "group": 128,
+      "bytes": 44171513
+    },
+    {
+      "tag": "all_r160",
+      "cache": "union32_160",
+      "view": "combined",
+      "weight": 0.12,
+      "need": "visual",
+      "bits": 5,
+      "kind": "single",
+      "strideless": false,
+      "frames": 16,
+      "group": 128,
+      "bytes": 13354151
+    },
+    {
+      "tag": "all_r_thermal",
+      "cache": "thermal32",
+      "view": "combined",
+      "weight": 0.07,
+      "need": "thermal",
+      "bits": 5,
+      "kind": "single",
+      "strideless": false,
+      "frames": 16,
+      "group": 128,
+      "bytes": 13456643
+    },
+    {
+      "tag": "all_r_ironly",
+      "cache": "union32",
+      "view": "ir",
+      "weight": 0.12,
+      "need": "ir",
+      "bits": 5,
+      "kind": "single",
+      "strideless": false,
+      "frames": 16,
+      "group": 128,
+      "bytes": 13164119
+    }
+  ],
+  "model_asset_bytes": 96081702,
+  "missing_modality_masking": true,
+  "test_rows_blank": {
+    "ir": 4,
+    "depth": 0,
+    "visual": 0,
+    "thermal": 10
+  },
+  "decoder": {
+    "extra": 1.0,
+    "threshold": 0.7,
+    "strength": 0.3,
+    "beam": 512,
+    "topk": 12,
+    "temperature": 1.0
+  },
+  "grouping": {
+    "gap": 3.0,
+    "slack": 100.0,
+    "loose_gap": 3.0
+  },
+  "decoder_guard": {
+    "max_take": 10,
+    "max_dup_pairs": 2,
+    "conf": 0.5
+  },
+  "validation": {
+    "config": {
+      "l2": [
+        0.01
+      ],
+      "result": "gate_global_interact_v1",
+      "global_only": true,
+      "slot0": "joint_interact"
+    },
+    "folds": {
+      "0": {
+        "l2": 0.01,
+        "inner_nll": {
+          "0.01": 0.8387474631761781
+        },
+        "mean_weights": [
+          0.7364,
+          0.1,
+          0.0607,
+          0.1029
+        ],
+        "fixed": {
+          "raw": 0.7415094339622641,
+          "decoded": 0.839622641509434,
+          "nll": 0.9870781525968776
+        },
+        "gated": {
+          "raw": 0.7566037735849057,
+          "decoded": 0.8377358490566038,
+          "nll": 0.9769587826408582
+        }
+      },
+      "1": {
+        "l2": 0.01,
+        "inner_nll": {
+          "0.01": 0.8870571218038288
+        },
+        "mean_weights": [
+          0.68,
+          0.1164,
+          0.0746,
+          0.129
+        ],
+        "fixed": {
+          "raw": 0.8018518518518518,
+          "decoded": 0.8888888888888888,
+          "nll": 0.7809841539814794
+        },
+        "gated": {
+          "raw": 0.8277777777777777,
+          "decoded": 0.8833333333333333,
+          "nll": 0.7543683135650762
+        }
+      },
+      "2": {
+        "l2": 0.01,
+        "inner_nll": {
+          "0.01": 0.8878422547934911
+        },
+        "mean_weights": [
+          0.669,
+          0.1178,
+          0.1044,
+          0.1088
+        ],
+        "fixed": {
+          "raw": 0.7830459770114943,
+          "decoded": 0.8735632183908046,
+          "nll": 0.8469368053708292
+        },
+        "gated": {
+          "raw": 0.8074712643678161,
+          "decoded": 0.889367816091954,
+          "nll": 0.7815650150953994
+        }
+      },
+      "3": {
+        "l2": 0.01,
+        "inner_nll": {
+          "0.01": 0.8307749914136254
+        },
+        "mean_weights": [
+          0.6623,
+          0.116,
+          0.0798,
+          0.1418
+        ],
+        "fixed": {
+          "raw": 0.753125,
+          "decoded": 0.8171875,
+          "nll": 1.0378310766473102
+        },
+        "gated": {
+          "raw": 0.76875,
+          "decoded": 0.825,
+          "nll": 0.9872685828408402
+        }
+      },
+      "4": {
+        "l2": 0.01,
+        "inner_nll": {
+          "0.01": 0.873911154811857
+        },
+        "mean_weights": [
+          0.6038,
+          0.1225,
+          0.1725,
+          0.1013
+        ],
+        "fixed": {
+          "raw": 0.8031746031746032,
+          "decoded": 0.8428571428571429,
+          "nll": 0.8796673690135065
+        },
+        "gated": {
+          "raw": 0.8142857142857143,
+          "decoded": 0.8571428571428571,
+          "nll": 0.8240775241876678
+        }
+      }
+    },
+    "pooled": {
+      "decoded": {
+        "delta": 0.00691699604743083,
+        "net_clips": 21,
+        "rows": 3036,
+        "ci95": [
+          -0.0027946615931252884,
+          0.01640504081520415
+        ]
+      },
+      "raw": {
+        "delta": 0.01844532279314888,
+        "net_clips": 56,
+        "rows": 3036,
+        "ci95": [
+          0.010837203099996862,
+          0.026966026176552485
+        ]
+      }
+    },
+    "nll_delta_per_fold": [
+      -0.010119369956019364,
+      -0.02661584041640319,
+      -0.06537179027542972,
+      -0.050562493806470044,
+      -0.05558984482583873
+    ]
+  },
+  "prior_training": "Training labels only, never test labels. Fold-specific priors for all validation.",
+  "sha256": {
+    "unified_model.pt": "ff5a73c81039aecb28e50cb1d4a9c7ab90a43dd4ac157753af13fa9f512c43d3",
+    "sequence_prior.json": "8cf40f5bfbfb7642d277d16f5eb8f696878417035980e2c679f405ae45a0914b"
+  }
+}

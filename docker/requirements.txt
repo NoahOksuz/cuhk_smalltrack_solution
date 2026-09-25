@@ -1,0 +1,13 @@
+# Inference-only dependencies, pinned to the exact versions the recorded
+# submission was produced with (server conda env `comps`).
+# torch/torchvision come from the CUDA 13.0 index (see Dockerfile); the rest from PyPI.
+# Note: opencv is provided transitively by `ultralytics` (it needs cv2); the
+# base image carries the libX*/libGL shared libraries that cv2 dlopen's.
+numpy==2.5.2
+scipy==1.18.1
+pillow==12.3.0
+ultralytics==8.4.142
+# ultralytics declares pi-heif in its own requirements and otherwise pip
+# auto-installs it on the first YOLO() call at runtime ("requirements:
+# AutoUpdate"). Pre-install it so container runs stay clean/offline.
+pi-heif==1.4.0
