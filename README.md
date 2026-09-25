@@ -186,5 +186,3 @@ The bundled checkpoint includes stock Ultralytics YOLO11n and YOLO11n-pose
 weights; Ultralytics is distributed under AGPL-3.0. Consult the [technical
 report](cuhk_PAPER.pdf) for the complete data-use, pretraining and detector
 declarations before redistributing or changing the visibility of this repo.
-No signed honor statement was present in the supplied folder; add one only if
-the organizers require it and it has actually been signed.
