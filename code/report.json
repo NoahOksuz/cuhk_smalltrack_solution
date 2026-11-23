@@ -258,7 +258,9 @@
   },
   "prior_training": "Training labels only, never test labels. Fold-specific priors for all validation.",
   "sha256": {
-    "unified_model.pt": "ff5a73c81039aecb28e50cb1d4a9c7ab90a43dd4ac157753af13fa9f512c43d3",
+    "video_members.pt": "b95d01bd4930001016e5badfcc8d252579b6b8e4d1ffc2804e21fbd72795fcec",
+    "yolo11n.pt2.xz": "d3eb8cb3f7e6debfb786e1af321262fa52dd1833e4c426fde863b03aae509423",
+    "yolo11n-pose.pt2.xz": "8147baf3d1030999688726594d9934f2d4c11703569f55003f6b9d441772a099",
     "sequence_prior.json": "8cf40f5bfbfb7642d277d16f5eb8f696878417035980e2c679f405ae45a0914b"
   }
 }

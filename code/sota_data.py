@@ -102,20 +102,20 @@ def prepare(root=ROOT, out=OUT, mode='union', detector=None, workers=8, clip_det
         assert obj.get('detector_batch_policy','global_32')==policy
         boxes=obj['boxes']
     else:
-        from ultralytics import YOLO
+        from sota_torch_yolo import TorchYolo
         import torch
         torch.set_num_threads(6)
         torch.set_float32_matmul_precision('highest')
-        det=YOLO(str(detector or Path('/home/nyx/comps/cuhk_small/yolo11n.pt')))
+        det=TorchYolo(detector or Path(__file__).resolve().parent/'checkpoints'/'yolo11n.pt2.xz',device=0,conf=.25,classes=[0])
         boxes=[[] for _ in records]
         batch,owners=[],[]
         def flush():
             if not batch: return
-            results=det.predict(batch,classes=[0],conf=.25,imgsz=640,device=0,verbose=False)
+            results=det.predict(batch,batch=len(batch))
             for owner,res in zip(owners,results,strict=True):
-                if len(res.boxes):
+                if len(res):
                     h,w=res.orig_shape
-                    boxes[owner].append((res.boxes.xyxy[res.boxes.conf.argmax()].cpu().numpy()/[w,h,w,h]).tolist())
+                    boxes[owner].append((res.xyxy[res.conf.argmax()]/[w,h,w,h]).tolist())
             batch.clear();owners.clear()
         for i,(r,base) in enumerate(records):
             paths=files(Path(base)/r['IR']) if r.get('IR') else []

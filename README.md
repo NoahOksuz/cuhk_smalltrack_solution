@@ -7,7 +7,7 @@
 | Public leaderboard | 0.89552 (180/201; 11th) |
 | Private leaderboard | 0.90196 (184/204; 8th) |
 | Held-out-subject CV | 0.7770 raw / 0.8521 decoded (3,036 clips) |
-| Shipped model assets | 96,081,702 bytes (checkpoint + transition prior; under the 100 MB cap) |
+| Shipped model assets | 98,451,640 bytes (video members + two YOLO11 programs + transition prior; under the 100 MB cap) |
 | Recorded predictions | [`final_submission.csv`](final_submission.csv), SHA-256 `f77d1d28d9797ce8fd49916bc5d18201371765ec682d0b3b5e23c3878ebc3893` |
 
 ## Quick start (Docker)
@@ -34,20 +34,31 @@ inference.sh            compatibility wrapper that calls `samhar "$@"`
 code/                   single canonical inference package
   cuhk_infer/           Python CLI
   sota_*.py             model, decoders, data, ensemble, joint
+  sota_torch_yolo.py    runs the YOLO11 models as torch.export programs
+  sota_onnx_yolo.py     YOLO pre-/post-processing (letterbox, NMS, rescaling)
   checkpoints/
-    unified_model.pt    all 4 video members + both YOLO detectors (one file)
-  report.json           member spec, decoder config, checkpoint sha256
+    video_members.pt    the 4 video members (packed, lzma-delta-coded)
+    yolo11n.pt2.xz      YOLO11n person detector (torch.export program, AGPL-3.0)
+    yolo11n-pose.pt2.xz YOLO11n-pose (torch.export program, AGPL-3.0)
+    unified_model.pt    original submission checkpoint; input to the export tool only
+  report.json           member spec, decoder config, asset sha256
   sequence_prior.json   train-only transition prior
   sample_submission.csv bundled Kaggle template
+tools/
+  export_yolo_torch.py  offline: unified_model.pt -> the three files above (AGPL-3.0)
 final_submission.csv    recorded test-set predictions (405 rows)
 submission.csv          identical copy supplied with the original submission
 docker/                 Dockerfile + optional host wrapper; installs `code/`
 cuhk_PAPER.pdf          technical report (method, CV, efficiency and compliance)
+LICENSE                 Apache License 2.0 (original work)
+NOTICE                  attribution notices
+THIRD_PARTY_LICENSES    third-party scope by path + full MIT / AGPL-3.0 texts
 ```
 
-There is one inference implementation and one checkpoint in the archive.
-Native inference installs `code/` through `pyproject.toml`; Docker copies and
-installs that same tree.
+There is one inference implementation. Native inference installs `code/`
+through `pyproject.toml`; Docker copies and installs that same tree. The
+Ultralytics package is not needed to run it: the detectors load as
+`torch.export` programs with plain PyTorch.
 
 ## 1. Native inference (Python package)
 
@@ -60,8 +71,7 @@ torchvision==0.29.0      (cu130)
 numpy==2.5.2
 scipy==1.18.1
 pillow==12.3.0
-ultralytics==8.4.142
-pi-heif==1.4.0
+opencv-python-headless==5.0.0.93
 ```
 
 Install from the repository root:
@@ -129,6 +139,14 @@ no cached boxes. The CSV and artifact checksums were independently checked
 when preparing this repository; the full GPU inference was **not rerun** as
 part of the GitHub packaging.
 
+After the detectors were moved from Ultralytics to `torch.export` programs,
+the full 405-clip inference was rerun natively on an RTX 5090 with the
+`ultralytics` and `onnxruntime` modules blocked from importing. The CSV is
+byte-identical to `final_submission.csv`, and every intermediate (person
+crops, pose hand crops, feature caches, member probabilities) matches the
+original Ultralytics run exactly. Wall time was 85.7 s. The Docker image has
+not been rebuilt since that change.
+
 | metric | value |
 | --- | --- |
 | rows | 405 |
@@ -171,18 +189,35 @@ itself reproduces exactly).
 ## IG65M backbone note
 
 The R(2+1)D-34 is initialized from the IG65M→Kinetics-clip-32 pretrained
-weights (architecture corrections per the MIT-licensed
-`moabitcoin/ig65m-pytorch`; license in `code/IG65M_LICENSE.txt`). This is a
+weights released by `facebookresearch/VMZ` (Apache-2.0), as converted to
+PyTorch by the MIT-licensed `moabitcoin/ig65m-pytorch`, whose architecture
+corrections `code/sota_model.py` follows (license in `code/IG65M_LICENSE.txt`). This is a
 63.5 M-parameter video backbone; the "no large pretrained backbones" clause of
 the Small Model Track is left to the organizers' interpretation, and we declare
 it here. The 100 MB model-size cap is the binding constraint and is met.
 
-## Licensing and compliance
+## License
 
-This private repository preserves the submission artifacts and report; it is
-not a claim that third-party components are proprietary. The IG65M-derived
-architecture is attributed in [`code/IG65M_LICENSE.txt`](code/IG65M_LICENSE.txt).
-The bundled checkpoint includes stock Ultralytics YOLO11n and YOLO11n-pose
-weights; Ultralytics is distributed under AGPL-3.0. Consult the [technical
-report](cuhk_PAPER.pdf) for the complete data-use, pretraining and detector
-declarations before redistributing or changing the visibility of this repo.
+Original work in this repository is licensed under the
+[Apache License 2.0](LICENSE). Third-party components keep their own licenses
+and are **not** covered by that grant:
+
+| Path | License | What it is |
+| --- | --- | --- |
+| everything not listed below | Apache-2.0 | original code, configs, docs, recorded outputs |
+| `code/checkpoints/video_members.pt` | Apache-2.0 | original fine-tuned weights; initialised from IG65M→Kinetics weights (VMZ, Apache-2.0; PyTorch conversion by ig65m-pytorch, MIT) |
+| `code/sota_model.py` | Apache-2.0, with MIT notice | architecture corrections adapted from `moabitcoin/ig65m-pytorch` |
+| `code/IG65M_LICENSE.txt` | MIT | original ig65m-pytorch license notice |
+| `code/checkpoints/yolo11n.pt2.xz` | AGPL-3.0 | Ultralytics YOLO11n pretrained model, exported with `torch.export` |
+| `code/checkpoints/yolo11n-pose.pt2.xz` | AGPL-3.0 | Ultralytics YOLO11n-pose pretrained model, exported with `torch.export` |
+| `code/checkpoints/unified_model.pt` | AGPL-3.0 and Apache-2.0 | original submission checkpoint (YOLO11 weights + video members); export-tool input only |
+| `tools/export_yolo_torch.py` | AGPL-3.0 | offline export tool; the only file that imports Ultralytics |
+
+The Ultralytics package is not a runtime dependency. Inference uses only the
+pretrained YOLO11 models, loaded with `torch.export.load`; letterboxing,
+non-maximum suppression and coordinate rescaling are implemented in
+`code/sota_onnx_yolo.py` under Apache-2.0. Full license texts and
+attributions are in [`NOTICE`](NOTICE) and
+[`THIRD_PARTY_LICENSES`](THIRD_PARTY_LICENSES). See the
+[technical report](cuhk_PAPER.pdf) for the data-use, pretraining and detector
+declarations.

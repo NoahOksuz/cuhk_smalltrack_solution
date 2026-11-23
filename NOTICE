@@ -1,0 +1,37 @@
+CUHK-X Challenge 2026 | Small Model Track solution
+Copyright 2026 Noah Deniz Oksuz
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE),
+except for the third-party components listed below, which remain under their
+own licenses. Full license texts and the file-by-file scope are in
+THIRD_PARTY_LICENSES.
+
+Third-party components
+----------------------
+
+1. ig65m-pytorch (MIT License)
+   Copyright (c) 2019 MoabitCoin
+   https://github.com/moabitcoin/ig65m-pytorch
+   Used for: the IG65M-compatible R(2+1)D-34 architecture corrections in
+   code/sota_model.py, and the PyTorch conversion of the IG65M->Kinetics
+   clip-32 pretrained weights used to initialise the video members.
+   Notice retained in code/IG65M_LICENSE.txt.
+
+2. VMZ: Model Zoo for Video Modeling (Apache License 2.0)
+   Facebook Research, https://github.com/facebookresearch/VMZ
+   Used for: the original IG65M->Kinetics R(2+1)D-34 pretrained weights from
+   which the video members in code/checkpoints/video_members.pt were
+   fine-tuned.
+
+3. Ultralytics YOLO11n and YOLO11n-pose pretrained models
+   (GNU Affero General Public License v3.0)
+   Ultralytics, https://github.com/ultralytics/ultralytics
+   Used for: person detection and pose keypoints. Shipped as
+     code/checkpoints/yolo11n.pt2.xz
+     code/checkpoints/yolo11n-pose.pt2.xz
+     code/checkpoints/unified_model.pt (original checkpoint; also holds the
+       video members)
+   These files are NOT covered by the Apache License 2.0 grant of this
+   repository. The Ultralytics software package is not a runtime dependency;
+   it is required only by the offline export tool tools/export_yolo_torch.py,
+   which is itself distributed under AGPL-3.0.

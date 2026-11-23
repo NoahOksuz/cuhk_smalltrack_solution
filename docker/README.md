@@ -7,13 +7,16 @@ and writes a Kaggle `submission.csv`.
 
 ## What the image contains
 
-- **All model weights in a single file**, `unified_model.pt`: the 4 R(2+1)D-34
-  members (1 body+hands joint with YOLO pose hand-crops, 1 depth+IR 160px,
+- **Model weights**: `video_members.pt` holds the 4 R(2+1)D-34 members
+  (1 body+hands joint with YOLO pose hand-crops, 1 depth+IR 160px,
   1 thermal, 1 IR-only), group-quantized (int6/int5) and losslessly
-  lzma-delta-coded, **plus** the **YOLO11n** person detector and
-  **YOLO11n-pose** (hand crops). Total model assets **96,058,917 bytes**
-  (≤ the 100 MB track cap). The entrypoint loads everything from this one
-  file and verifies its sha256 against `report.json`.
+  lzma-delta-coded. The **YOLO11n** person detector and **YOLO11n-pose**
+  (hand crops) ship as xz-compressed `torch.export` programs
+  (`yolo11n.pt2.xz`, `yolo11n-pose.pt2.xz`; AGPL-3.0 pretrained models).
+  Total model assets **98,451,640 bytes** with the prior (≤ the 100 MB
+  track cap). The entrypoint verifies each file's sha256 against
+  `report.json`. The image also contains the original `unified_model.pt`
+  because it copies all of `code/`; inference does not read it.
 - The **train-only transition prior** (`sequence_prior.json`).
 - **No training data, no downloads at inference.** `sota_model.Model()` is
   built with `pretrained=False`, so the IG65M hub checkpoint is never loaded.
@@ -30,9 +33,9 @@ docker build -f docker/Dockerfile -t cuhk-small-infer:latest .
 The base is `python:3.13-slim-bookworm` with
 **torch 2.14.0 + CUDA 13.0** (pinned; matches the RTX 5090 sm_120 host that
 produced the recorded submission) plus `torchvision 0.29.0`, `numpy 2.5.2`,
-`scipy 1.18.1`, `pillow 12.3.0`, `ultralytics 8.4.142`. OpenCV is pulled
-transitively by ultralytics; the base image ships the X/GL shared libraries
-cv2 dlopen's.
+`scipy 1.18.1`, `pillow 12.3.0`, `opencv-python-headless 5.0.0.93`. The
+Ultralytics package is not installed; the build asserts it is never imported.
+`LICENSE`, `NOTICE` and `THIRD_PARTY_LICENSES` are copied into `/app`.
 
 ## Run
 
@@ -78,14 +81,16 @@ docker/
   run_inference.sh    optional host-side docker-run wrapper
 ```
 
-The canonical implementation and only checkpoint live outside this directory:
+The canonical implementation and model assets live outside this directory:
 
 ```
 pyproject.toml
 code/
   cuhk_infer/cli.py
   sota_*.py
-  checkpoints/unified_model.pt
+  checkpoints/video_members.pt
+  checkpoints/yolo11n.pt2.xz
+  checkpoints/yolo11n-pose.pt2.xz
   report.json
   sequence_prior.json
   sample_submission.csv
