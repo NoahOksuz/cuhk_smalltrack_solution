@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# This tool imports Ultralytics (AGPL-3.0) and is distributed under AGPL-3.0;
+# see THIRD_PARTY_LICENSES. It is not part of the Apache-2.0 inference package.
 """Offline build step: save the bundled YOLO11 models as `torch.export` programs.
 
 This is the only place Ultralytics is imported, and it is not part of

@@ -52,7 +52,7 @@ RUN pip install -r /app/docker/requirements.txt
 
 # One canonical source tree and one canonical checkpoint. The native CLI uses
 # these same files from the host checkout; Docker copies them into the image.
-COPY pyproject.toml README.md /app/
+COPY pyproject.toml README.md LICENSE NOTICE THIRD_PARTY_LICENSES /app/
 COPY code/ /app/code/
 RUN pip install --no-deps -e /app \
     && python -c "import sota_release_infer2, sys; assert 'ultralytics' not in sys.modules; print('import graph OK')"
