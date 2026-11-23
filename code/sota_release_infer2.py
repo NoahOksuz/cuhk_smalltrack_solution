@@ -3,8 +3,6 @@ import argparse
 import csv
 import hashlib
 import json
-import os
-import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -22,26 +20,12 @@ from sota_decoder import ensemble_decode
 from sota_delta_pack import decode as decode_weights
 from sota_model import Model, strideless
 from sota_views import input_channels
+from sota_onnx_yolo import OnnxYolo
 from sota_ensemble import availability, combine
-from sota_joint import JointModel, pose_probes, hand_crop, decode_hands, predict_joint, HANDS
+from sota_joint import JointModel, pose_probes, hand_crop, decode_hands, predict_joint, HANDS, POSE
 
 MEAN = torch.tensor([.43216, .394666, .37645, (.43216 + .394666 + .37645) / 3]).view(4, 1, 1, 1)
 STD = torch.tensor([.22803, .22145, .216989, (.22803 + .22145 + .216989) / 3]).view(4, 1, 1, 1)
-
-
-def yolo_from_unified(ckpt):
-    """Build a YOLO object from a unified-checkpoint dict entry (a full ultralytics
-    checkpoint with a DetectionModel/PoseModel under 'model'). YOLO() only accepts
-    paths or modules, so round-trip the entry through a temp file; the resulting
-    state_dict is byte-identical to loading the original .pt directly."""
-    from ultralytics import YOLO
-    with tempfile.NamedTemporaryFile(suffix='.pt', delete=False) as tf:
-        torch.save(ckpt, tf.name)
-        path = tf.name
-    try:
-        return YOLO(path)
-    finally:
-        os.unlink(path)
 
 
 def channels(x, view):
@@ -118,16 +102,14 @@ def main():
     torch.set_num_threads(6)
     torch.set_float32_matmul_precision('highest')
     report = json.loads((args.package / 'report.json').read_text())
-    # Load all six model members from the one canonical checkpoint. Accept a
-    # package-root file for compatibility, but the source layout keeps it under
-    # checkpoints/.
-    ckpt = args.package / 'checkpoints' / 'unified_model.pt'
-    if not ckpt.exists():
-        ckpt = args.package / 'unified_model.pt'
+    # Video members live in checkpoints/video_members.pt; the two detectors are
+    # plain ONNX graphs beside it (exported by tools/export_yolo_onnx.py).
+    ckdir = args.package / 'checkpoints'
+    ckpt = ckdir / 'video_members.pt'
     for name, expected in report['sha256'].items():
-        path = ckpt if name == 'unified_model.pt' else args.package / name
+        path = ckdir / name if (ckdir / name).exists() else args.package / name
         assert hashlib.sha256(path.read_bytes()).hexdigest() == expected, name
-    model_weights = torch.load(ckpt, map_location='cpu', weights_only=False)
+    model_weights = torch.load(ckpt, map_location='cpu', weights_only=True)
     with open(args.template) as f:
         reader = csv.DictReader(f)
         fields = reader.fieldnames
@@ -136,7 +118,7 @@ def main():
     validate_raw_input(args.input, ids)
     args.work.mkdir(parents=True, exist_ok=True)
     rows = [dict(id=i, **{m: f'{i}/{m}' for m in ['Depth_Color', 'IR', 'Thermal', 'IMU']}) for i in ids]
-    detector = yolo_from_unified(model_weights['yolo11n'])
+    detector = OnnxYolo(ckdir / 'yolo11n.onnx', device=0, conf=.25, classes=[0])
     boxes_per_clip = []
     for i, row in enumerate(rows):
         paths = files(args.input / row['IR'])
@@ -147,10 +129,10 @@ def main():
                 batch.append(np.asarray(im))
         boxes = []
         if batch:
-            for res in detector.predict(batch, classes=[0], conf=.25, imgsz=640, device=0, verbose=False):
-                if len(res.boxes):
+            for res in detector.predict(batch):
+                if len(res):
                     h, w = res.orig_shape
-                    boxes.append((res.boxes.xyxy[res.boxes.conf.argmax()].cpu().numpy() / [w, h, w, h]).tolist())
+                    boxes.append((res.xyxy[res.conf.argmax()] / [w, h, w, h]).tolist())
         boxes_per_clip.append(boxes)
         if i % 100 == 0:
             print('detected', i, flush=True)
@@ -174,7 +156,7 @@ def main():
     hand_caches = {}
     if any(item.get('kind') == 'joint' for item in report['models']):
         # Hands view: yolo11n-pose wrists on the eight IR probe frames, relative to the clip's person crop.
-        pose = yolo_from_unified(model_weights['yolo11n-pose'])
+        pose = OnnxYolo(ckdir / 'yolo11n-pose.onnx', device=0, conf=POSE['conf'], imgsz=POSE['imgsz'])
         crops['hands'], status = [], []
         for i, row in enumerate(rows):
             kp, size = pose_probes(pose, args.input / row['IR'], crops['union'][i])

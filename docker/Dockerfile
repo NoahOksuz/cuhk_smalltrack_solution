@@ -11,7 +11,7 @@
 
 FROM python:3.13-slim-bookworm
 
-# OpenCV/ultralytics runtime libraries.
+# OpenCV runtime libraries.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libglib2.0-0 \
@@ -36,8 +36,7 @@ RUN apt-get update \
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    YOLO_CONFIG_DIR=/tmp
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
 
@@ -56,7 +55,7 @@ RUN pip install -r /app/docker/requirements.txt
 COPY pyproject.toml README.md /app/
 COPY code/ /app/code/
 RUN pip install --no-deps -e /app \
-    && python -c "from ultralytics import SETTINGS; import sota_release_infer2; print('import graph OK')"
+    && python -c "import sota_release_infer2, sys; assert 'ultralytics' not in sys.modules; print('import graph OK')"
 
 # The Python CLI auto-discovers the SM_test_XXXX root under /data and writes
 # the CSV to the host's current directory mounted at /out.

@@ -25,7 +25,7 @@ from sota_data_res import decode as visual_decode
 from sota_model import Model, strideless
 
 CROP = dict(kp_conf=.5, hand_extension=.5, pad=.08, min_side=96)
-POSE = dict(probes=8, imgsz=640, conf=.25, quantize=16)
+POSE = dict(probes=8, imgsz=640, conf=.25)  # pose graph is fp16
 WRISTS, ELBOWS = (9, 10), (7, 8)
 HANDS = {'irhand128': dict(channels=1, size=128), 'depthirhand160': dict(channels=4, size=160)}
 MEAN = torch.tensor([.43216, .394666, .37645, (.43216 + .394666 + .37645) / 3]).view(4, 1, 1, 1)
@@ -93,11 +93,11 @@ def pose_probes(detector, folder, body):
         slots.append(t)
     if not frames:
         return keypoints, size
-    results = detector.predict(frames, imgsz=POSE['imgsz'], conf=POSE['conf'], quantize=POSE['quantize'], verbose=False, batch=len(frames))
+    results = detector.predict(frames, batch=len(frames))
     for t, r in zip(slots, results):
-        if r.keypoints is None or not len(r.boxes):
+        if r.kpt_xyn is None or not len(r):
             continue
-        xyxy, conf = r.boxes.xyxyn.cpu().numpy(), r.boxes.conf.cpu().numpy()
+        xyxy, conf = r.xyxyn, r.conf
         if body is not None:
             c = np.asarray(body)
             inter = (np.clip(np.minimum(xyxy[:, 2], c[2]) - np.maximum(xyxy[:, 0], c[0]), 0, None)
@@ -106,8 +106,8 @@ def pose_probes(detector, folder, body):
             k = int(np.lexsort((-conf, -(inter / area).round(2)))[0])
         else:
             k = int(conf.argmax())
-        keypoints[t, :, :2] = r.keypoints.xyn[k].cpu().numpy()
-        keypoints[t, :, 2] = r.keypoints.conf[k].cpu().numpy()
+        keypoints[t, :, :2] = r.kpt_xyn[k]
+        keypoints[t, :, 2] = r.kpt_conf[k]
     return keypoints, size
 
 
