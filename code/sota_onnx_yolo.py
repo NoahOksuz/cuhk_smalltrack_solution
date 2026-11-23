@@ -21,7 +21,6 @@ from dataclasses import dataclass
 
 import cv2
 import numpy as np
-import onnxruntime as ort
 import torch
 import torchvision
 
@@ -47,6 +46,7 @@ class Detections:
 
 class OnnxYolo:
     def __init__(self, path, device=0, imgsz=640, conf=.25, iou=.7, classes=None, max_det=300, tf32=True):
+        import onnxruntime as ort
         if device is None or not torch.cuda.is_available():
             providers, self.device = ['CPUExecutionProvider'], torch.device('cpu')
         else:
@@ -102,7 +102,8 @@ class OnnxYolo:
         box, cls, extra = x.split((4, nc, nk), 1)
         conf, j = cls.max(1, keepdim=True)
         keep = conf.view(-1) > self.conf
-        x = torch.cat((box, conf, j.to(x.dtype), extra), 1)[keep]
+        # The fp32 class column promotes the row to fp32 (fp16 graphs included); rescaling below runs in fp32.
+        x = torch.cat((box, conf, j.float(), extra), 1)[keep]
         if self.classes is not None:
             x = x[(x[:, 5:6] == torch.tensor(self.classes, device=x.device)).any(1)]
         if not len(x):

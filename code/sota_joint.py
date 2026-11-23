@@ -25,7 +25,7 @@ from sota_data_res import decode as visual_decode
 from sota_model import Model, strideless
 
 CROP = dict(kp_conf=.5, hand_extension=.5, pad=.08, min_side=96)
-POSE = dict(probes=8, imgsz=640, conf=.25)  # pose graph is fp16
+POSE = dict(probes=8, conf=.25)  # pose program is fp16, exported at 480x640
 WRISTS, ELBOWS = (9, 10), (7, 8)
 HANDS = {'irhand128': dict(channels=1, size=128), 'depthirhand160': dict(channels=4, size=160)}
 MEAN = torch.tensor([.43216, .394666, .37645, (.43216 + .394666 + .37645) / 3]).view(4, 1, 1, 1)

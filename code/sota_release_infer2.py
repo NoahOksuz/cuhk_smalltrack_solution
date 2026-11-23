@@ -20,7 +20,7 @@ from sota_decoder import ensemble_decode
 from sota_delta_pack import decode as decode_weights
 from sota_model import Model, strideless
 from sota_views import input_channels
-from sota_onnx_yolo import OnnxYolo
+from sota_torch_yolo import TorchYolo
 from sota_ensemble import availability, combine
 from sota_joint import JointModel, pose_probes, hand_crop, decode_hands, predict_joint, HANDS, POSE
 
@@ -103,7 +103,7 @@ def main():
     torch.set_float32_matmul_precision('highest')
     report = json.loads((args.package / 'report.json').read_text())
     # Video members live in checkpoints/video_members.pt; the two detectors are
-    # plain ONNX graphs beside it (exported by tools/export_yolo_onnx.py).
+    # torch.export programs beside it (tools/export_yolo_torch.py).
     ckdir = args.package / 'checkpoints'
     ckpt = ckdir / 'video_members.pt'
     for name, expected in report['sha256'].items():
@@ -118,7 +118,7 @@ def main():
     validate_raw_input(args.input, ids)
     args.work.mkdir(parents=True, exist_ok=True)
     rows = [dict(id=i, **{m: f'{i}/{m}' for m in ['Depth_Color', 'IR', 'Thermal', 'IMU']}) for i in ids]
-    detector = OnnxYolo(ckdir / 'yolo11n.onnx', device=0, conf=.25, classes=[0])
+    detector = TorchYolo(ckdir / 'yolo11n.pt2.xz', device=0, conf=.25, classes=[0])
     boxes_per_clip = []
     for i, row in enumerate(rows):
         paths = files(args.input / row['IR'])
@@ -129,7 +129,7 @@ def main():
                 batch.append(np.asarray(im))
         boxes = []
         if batch:
-            for res in detector.predict(batch):
+            for res in detector.predict(batch, batch=len(batch)):  # one batch per clip, as originally run
                 if len(res):
                     h, w = res.orig_shape
                     boxes.append((res.xyxy[res.conf.argmax()] / [w, h, w, h]).tolist())
@@ -156,7 +156,7 @@ def main():
     hand_caches = {}
     if any(item.get('kind') == 'joint' for item in report['models']):
         # Hands view: yolo11n-pose wrists on the eight IR probe frames, relative to the clip's person crop.
-        pose = OnnxYolo(ckdir / 'yolo11n-pose.onnx', device=0, conf=POSE['conf'], imgsz=POSE['imgsz'])
+        pose = TorchYolo(ckdir / 'yolo11n-pose.pt2.xz', device=0, conf=POSE['conf'])
         crops['hands'], status = [], []
         for i, row in enumerate(rows):
             kp, size = pose_probes(pose, args.input / row['IR'], crops['union'][i])
