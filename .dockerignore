@@ -12,3 +12,7 @@ dist/
 submission.csv
 final_submission.csv
 cuhk_PAPER.pdf
+# Original submission checkpoint: only the offline export tool reads it.
+# Keep it out of the inference image so the packaged model assets are exactly
+# video_members.pt + the two YOLO11 programs + sequence_prior.json.
+code/checkpoints/unified_model.pt

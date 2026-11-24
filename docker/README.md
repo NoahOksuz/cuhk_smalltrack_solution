@@ -15,8 +15,8 @@ and writes a Kaggle `submission.csv`.
   (`yolo11n.pt2.xz`, `yolo11n-pose.pt2.xz`; AGPL-3.0 pretrained models).
   Total model assets **98,451,640 bytes** with the prior (≤ the 100 MB
   track cap). The entrypoint verifies each file's sha256 against
-  `report.json`. The image also contains the original `unified_model.pt`
-  because it copies all of `code/`; inference does not read it.
+  `report.json`. The original `unified_model.pt` is excluded from the image
+  (`.dockerignore`); only the offline export tool reads it.
 - The **train-only transition prior** (`sequence_prior.json`).
 - **No training data, no downloads at inference.** `sota_model.Model()` is
   built with `pretrained=False`, so the IG65M hub checkpoint is never loaded.
@@ -96,8 +96,9 @@ code/
   sample_submission.csv
 ```
 
-The Docker build copies `code/` once into the image; the archive does not keep
-a second Docker-specific checkpoint or source copy.
+The Docker build copies `code/` once into the image, minus
+`checkpoints/unified_model.pt`; the archive does not keep a second
+Docker-specific checkpoint or source copy.
 
 ## Notes for the technical report
 
