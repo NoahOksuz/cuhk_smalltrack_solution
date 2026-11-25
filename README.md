@@ -40,7 +40,7 @@ code/                   single canonical inference package
     video_members.pt    the 4 video members (packed, lzma-delta-coded)
     yolo11n.pt2.xz      YOLO11n person detector (torch.export program, AGPL-3.0)
     yolo11n-pose.pt2.xz YOLO11n-pose (torch.export program, AGPL-3.0)
-    unified_model.pt    original submission checkpoint; input to the export tool only
+    unified_model.pt    original submission checkpoint; export-tool input only, not in the Docker image
   report.json           member spec, decoder config, asset sha256
   sequence_prior.json   train-only transition prior
   sample_submission.csv bundled Kaggle template

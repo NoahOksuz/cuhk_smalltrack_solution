@@ -49,7 +49,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--template", type=Path, default=TEMPLATE,
                     help="Kaggle template csv (default: the bundled one)")
     ap.add_argument("--package", type=Path, default=None,
-                    help="package dir holding checkpoints/unified_model.pt + report.json "
+                    help="package dir holding checkpoints/ (video_members.pt, yolo11n*.pt2.xz) + report.json "
                          "(default: the package root)")
     ap.add_argument("--work", type=Path, default=None,
                     help="scratch dir for decoded caches (default: a temp dir)")
